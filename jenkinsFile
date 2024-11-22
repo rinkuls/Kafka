@@ -1,0 +1,60 @@
+node {
+    def WORKSPACE = "/var/lib/jenkins/workspace/Kafka"
+    def buildNumber = env.BUILD_NUMBER ?: '0'  // Jenkins build number
+    def helmChartName = "kafka-producer-chart"
+    def releaseName = "kafka-release"
+
+    try {
+        // Stage 1: Clone Repository
+        stage('Clone Repository') {
+            git url: 'https://github.com/rinkuls/Kafka.git',
+                credentialsId: 'springdeploy-user',
+                branch: 'main'
+        }
+
+        // Stage 2: Prepare Namespace and Deploy to Minikube with Helm
+        stage('Deploy to Minikube with Helm') {
+            echo "Deploying to Minikube using Helm with image: ${dockerImageTag}"
+            bat 'kubectl config use-context minikube'
+
+            // Check if namespace exists, create it if not
+            bat """
+            if ! kubectl get namespace kafkaServer >nul 2>&1; then
+                kubectl create namespace kafkaServer
+            fi
+            """
+
+            // Deploy or upgrade Helm chart
+            bat "helm upgrade --install ${releaseName} ${helmChartName} --namespace kafkaServer"
+
+            // Verify Helm release status
+            bat "helm status ${releaseName} --namespace kafkaServer"
+
+            // Optionally, check pod status after the deployment
+            bat 'kubectl get pods --namespace kafkaServer'
+        }
+    } catch (Exception e) {
+        echo "Error occurred: ${e.message}"
+        currentBuild.result = 'FAILED'
+        notifyBuild('FAILED')
+        throw e
+    } finally {
+        echo "Cleaning up resources"
+    }
+}
+
+// Email notification function
+def notifyBuild(String buildStatus = 'STARTED') {
+    buildStatus = buildStatus ?: 'SUCCESSFUL'
+    def now = new Date()
+    def subject_email = "Kafka - Status: ${buildStatus}"
+    def details = """<p>${buildStatus} JOB</p>
+    <p>Job: ${env.JOB_NAME} - Build Number: [${env.BUILD_NUMBER}] - Time: ${now}</p>
+    <p>Check console output at "<a href="${env.BUILD_URL}">${env.JOB_NAME}</a>"</p>"""
+
+    emailext(
+        to: "rinkulsharma123@gmail.com",
+        subject: subject_email,
+        body: details
+    )
+}

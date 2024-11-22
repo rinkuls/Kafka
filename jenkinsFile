@@ -1,12 +1,14 @@
 node {
-    def WORKSPACE = "/var/lib/jenkins/workspace/Kafka"
-    def buildNumber = env.BUILD_NUMBER ?: '0'  // Jenkins build number
+    // Define constants and environment variables
+    def WORKSPACE = "C:\\Jenkins\\workspace\\Kafka"  // Update if needed for your environment
+    def buildNumber = env.BUILD_NUMBER ?: '0'        // Jenkins build number
     def helmChartName = "kafka-producer-chart"
     def releaseName = "kafka-release"
 
     try {
         // Stage 1: Clone Repository
         stage('Clone Repository') {
+            echo "Cloning repository from GitHub..."
             git url: 'https://github.com/rinkuls/Kafka.git',
                 credentialsId: 'springdeploy-user',
                 branch: 'main'
@@ -14,14 +16,17 @@ node {
 
         // Stage 2: Prepare Namespace and Deploy to Minikube with Helm
         stage('Deploy to Minikube with Helm') {
-            echo "Deploying to Minikube using Helm "
+            echo "Deploying to Minikube using Helm"
+
+            // Switch Kubernetes context to Minikube
             bat 'kubectl config use-context minikube'
 
-            // Check if namespace exists, create it if not
+            // Check if namespace exists, and create it if it doesn't
             bat """
-            if ! kubectl get namespace kafkaServer >nul 2>&1; then
+            kubectl get namespace kafkaServer >nul 2>&1 || (
+                echo "Namespace kafkaServer not found. Creating..."
                 kubectl create namespace kafkaServer
-            fi
+            )
             """
 
             // Deploy or upgrade Helm chart
@@ -34,11 +39,13 @@ node {
             bat 'kubectl get pods --namespace kafkaServer'
         }
     } catch (Exception e) {
+        // Handle errors and send notifications
         echo "Error occurred: ${e.message}"
         currentBuild.result = 'FAILED'
         notifyBuild('FAILED')
         throw e
     } finally {
+        // Final cleanup or logs
         echo "Cleaning up resources"
     }
 }
@@ -52,9 +59,3 @@ def notifyBuild(String buildStatus = 'STARTED') {
     <p>Job: ${env.JOB_NAME} - Build Number: [${env.BUILD_NUMBER}] - Time: ${now}</p>
     <p>Check console output at "<a href="${env.BUILD_URL}">${env.JOB_NAME}</a>"</p>"""
 
-    emailext(
-        to: "rinkulsharma123@gmail.com",
-        subject: subject_email,
-        body: details
-    )
-}

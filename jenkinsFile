@@ -14,7 +14,7 @@ node {
 
         // Stage 2: Prepare Namespace and Deploy to Minikube with Helm
         stage('Deploy to Minikube with Helm') {
-            echo "Deploying to Minikube using Helm with image: ${dockerImageTag}"
+            echo "Deploying to Minikube using Helm "
             bat 'kubectl config use-context minikube'
 
             // Check if namespace exists, create it if not

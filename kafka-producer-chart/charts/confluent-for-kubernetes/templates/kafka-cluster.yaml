@@ -1,9 +1,9 @@
-# kafka-clust.yaml
+# kafka-cluster.yaml
 
 apiVersion: platform.confluent.io/v1beta1
 kind: Kafka
 metadata:
-  name: kafka-clust
+  name: kafka-cluster
   namespace: default
   labels:
     app.kubernetes.io/managed-by: "Helm"                # Required by Helm
@@ -26,7 +26,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kafka-clust
+  name: kafka-cluster
   namespace: default
 spec:
   ports:

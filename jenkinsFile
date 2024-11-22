@@ -23,20 +23,20 @@ node {
 
             // Check if namespace exists, and create it if it doesn't
             bat """
-            kubectl get namespace kafkaServer >nul 2>&1 || (
-                echo "Namespace kafkaServer not found. Creating..."
-                kubectl create namespace kafkaServer
+            kubectl get namespace kafka-server >nul 2>&1 || (
+                echo "Namespace kafka-server not found. Creating..."
+                kubectl create namespace kafka-server
             )
             """
 
             // Deploy or upgrade Helm chart
-            bat "helm upgrade --install ${releaseName} ${helmChartName} --namespace kafkaServer"
+            bat "helm upgrade --install ${releaseName} ${helmChartName} --namespace kafka-server"
 
             // Verify Helm release status
-            bat "helm status ${releaseName} --namespace kafkaServer"
+            bat "helm status ${releaseName} --namespace kafka-server"
 
             // Optionally, check pod status after the deployment
-            bat 'kubectl get pods --namespace kafkaServer'
+            bat 'kubectl get pods --namespace kafka-server'
         }
     } catch (Exception e) {
         // Handle errors and send notifications

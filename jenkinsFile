@@ -21,13 +21,6 @@ node {
             // Switch Kubernetes context to Minikube
             bat 'kubectl config use-context minikube'
 
-            // Check if namespace exists, and create it if it doesn't
-            bat """
-            kubectl get namespace kafka-server >nul 2>&1 || (
-                echo "Namespace kafka-server not found. Creating..."
-                kubectl create namespace kafka-server
-            )
-            """
 
             // Deploy or upgrade Helm chart
             bat "helm upgrade --install ${releaseName} ${helmChartName} --namespace kafka-server"
